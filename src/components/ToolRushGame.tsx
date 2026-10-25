@@ -863,7 +863,6 @@ export const ToolRushGame: React.FC<ToolRushGameProps> = ({ onReturnHome }) => {
 
         ctx.restore();
       }
-      }
 
       // Draw Player Repair Basket / Mechanic Magnet Tray
       const p = s.player;
