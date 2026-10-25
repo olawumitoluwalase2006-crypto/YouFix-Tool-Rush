@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>YouFix: Tool Rush | Interactive Emergency Repair Game</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            cyber: {
+              dark: '#030712',
+              card: 'rgba(15, 23, 42, 0.75)',
+              border: 'rgba(56, 189, 248, 0.25)',
+              cyan: '#06b6d4',
+              emerald: '#10b981',
+              amber: '#f59e0b',
+              rose: '#f43f5e',
+            }
+          },
+          boxShadow: {
+            'neon-cyan': '0 0 20px -2px rgba(6, 182, 212, 0.5), 0 0 8px 0 rgba(6, 182, 212, 0.3)',
+            'neon-emerald': '0 0 20px -2px rgba(16, 185, 129, 0.5), 0 0 8px 0 rgba(16, 185, 129, 0.3)',
+            'neon-amber': '0 0 20px -2px rgba(245, 158, 11, 0.5), 0 0 8px 0 rgba(245, 158, 11, 0.3)',
+            'neon-rose': '0 0 25px 0 rgba(244, 63, 94, 0.6), 0 0 10px 0 rgba(244, 63, 94, 0.4)',
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      background-color: #030712;
+      color: #f8fafc;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace, system-ui;
+      overflow-x: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .scanline {
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.3) 50%);
+      background-size: 100% 4px;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.98); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .animate-fadeIn {
+      animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+  </style>
+</head>
+<body class="min-h-screen relative flex flex-col justify-between p-3 sm:p-6 bg-slate-950">
+
+  <!-- Ambient Cyber Lighting -->
+  <div class="fixed inset-0 pointer-events-none z-0">
+    <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-cyan-600/10 rounded-full blur-[140px]"></div>
+    <div class="absolute bottom-10 left-10 w-[350px] h-[300px] bg-emerald-600/10 rounded-full blur-[120px]"></div>
+    <div class="absolute top-10 right-10 w-[300px] h-[300px] bg-amber-600/10 rounded-full blur-[100px]"></div>
+    <div class="absolute inset-0 scanline pointer-events-none opacity-40"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="relative z-10 w-full max-w-5xl mx-auto flex items-center justify-between py-2 border-b border-cyan-500/20 mb-3">
+    <div id="btn-brand-home" class="flex items-center gap-2.5 cursor-pointer group select-none">
+      <div class="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-400/40 flex items-center justify-center text-cyan-400 group-hover:border-cyan-400 transition-all">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      </div>
+      <div>
+        <div class="font-mono font-black tracking-tight text-white text-base sm:text-lg flex items-center gap-1">
+          YOU<span class="text-cyan-400">FIX</span>
+          <span class="text-xs px-1.5 py-0.5 rounded bg-cyan-950 border border-cyan-500/40 text-cyan-300 font-mono">RUSH</span>
+        </div>
+        <div class="text-[10px] font-mono text-slate-400 -mt-1 hidden sm:block">Emergency Diagnostic Systems</div>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <div class="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-xs font-mono text-emerald-400">
+        <div class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></div>
+        <span>SYS_ONLINE 60FPS</span>
+      </div>
+      <button id="btn-open-manual" class="px-3 py-1.5 rounded-lg bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-cyan-300 hover:text-white text-xs font-mono transition flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/></svg>
+        <span>Field Manual</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Viewport -->
+  <main class="relative z-10 flex-1 flex items-center justify-center my-auto w-full">
+    
+    <!-- 1. HOME SCREEN -->
+    <div id="home-view" class="w-full max-w-4xl mx-auto flex flex-col items-center justify-center p-2 sm:p-4 animate-fadeIn">
+      <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-950/60 border border-cyan-500/40 text-cyan-400 text-xs font-mono tracking-widest uppercase mb-4 shadow-neon-cyan">
+        <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+        <span>YouFix Brand Ecosystem • Capstone Interactive Release</span>
+      </div>
+
+      <div class="w-full bg-slate-900/80 backdrop-blur-xl border border-cyan-500/30 rounded-3xl p-6 sm:p-10 shadow-2xl relative overflow-hidden">
+        <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 via-emerald-400 to-amber-500"></div>
+
+        <div class="text-center max-w-2xl mx-auto">
+          <h1 class="text-4xl sm:text-6xl font-black font-mono tracking-tight text-white mb-2 uppercase drop-shadow-[0_0_25px_rgba(6,182,212,0.8)]">
+            You<span class="text-cyan-400">Fix</span>: <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-emerald-300 to-amber-400">Tool Rush</span>
+          </h1>
+
+          <p class="text-slate-300 text-sm sm:text-base leading-relaxed mb-6">
+            Gamifying emergency workshop repairs. Test your reaction speed, precision diagnostics, and hazard avoidance under extreme pressure. Catch vital repair tools while dodging lethal electrical sparks and toxic thermal leaks!
+          </p>
+
+          <div id="home-record-banner" class="hidden mb-6 inline-flex items-center gap-3 px-5 py-2.5 rounded-xl bg-slate-950/90 border border-amber-500/40 text-amber-300 font-mono text-sm shadow-neon-amber">
+            <svg class="w-5 h-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.599-.8a1 1 0 01.894 1.79l-1.233.616 1.738 5.42a1 1 0 01-.285 1.05A3.989 3.989 0 0115 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.715-5.349L11 6.477V16h2a1 1 0 110 2H7a1 1 0 110-2h2V6.477L6.237 7.582l1.715 5.349a1 1 0 01-.285 1.05A3.989 3.989 0 015 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.738-5.42-1.233-.617a1 1 0 01.894-1.788l1.599.799L9 4.323V3a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+            <span>RECORD SCORE: <strong id="home-record-val" class="text-white text-base">0</strong></span>
+            <span id="home-record-meta" class="text-xs text-amber-400/80"></span>
+          </div>
+
+          <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+            <button id="btn-start-game" class="w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-cyan-500 via-cyan-400 to-emerald-400 hover:from-cyan-400 hover:to-emerald-300 text-slate-950 font-black font-mono text-lg uppercase tracking-wider shadow-neon-cyan transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-3">
+              <svg class="w-6 h-6 fill-slate-950" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <span>Start Tool Rush</span>
+            </button>
+
+            <button id="btn-manual-home" class="w-full sm:w-auto px-6 py-4 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-slate-600 text-cyan-300 hover:text-white font-mono text-sm font-bold uppercase transition flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.5L19 7.5V19a2.5 2.5 0 0 1-2.5 2.5z"/></svg>
+              <span>Field Manual</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Intel Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-800 pt-6">
+          <div class="bg-slate-950/60 rounded-xl p-4 border border-cyan-500/20">
+            <div class="text-cyan-400 font-mono text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+              <span>Essential Repair Tools (+Points)</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-xs font-mono">
+              <div class="p-2 rounded bg-slate-900/80 border border-emerald-800/50 flex justify-between"><span class="text-emerald-200">Cyber Wrench</span><span class="text-emerald-400 font-bold">+10</span></div>
+              <div class="p-2 rounded bg-slate-900/80 border border-emerald-800/50 flex justify-between"><span class="text-emerald-200">Seal Tape</span><span class="text-emerald-400 font-bold">+15</span></div>
+              <div class="p-2 rounded bg-slate-900/80 border border-cyan-800/50 flex justify-between"><span class="text-cyan-200">Screwdriver</span><span class="text-cyan-400 font-bold">+20</span></div>
+              <div class="p-2 rounded bg-slate-900/80 border border-teal-800/50 flex justify-between"><span class="text-teal-200">Hydraulic Jack</span><span class="text-teal-400 font-bold">+30</span></div>
+            </div>
+            <div class="mt-2 text-[11px] text-amber-300 font-mono">★ Catching Golden Wrench grants +100 PTS and 6s invulnerability shield!</div>
+          </div>
+
+          <div class="bg-slate-950/60 rounded-xl p-4 border border-rose-500/20">
+            <div class="text-rose-400 font-mono text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-rose-400"></span>
+              <span>Lethal Workshop Hazards (-1 Life)</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-xs font-mono">
+              <div class="p-2 rounded bg-slate-900/80 border border-slate-800 flex justify-between"><span>Electric Spark</span><span class="text-rose-400 font-bold">-1 LIFE</span></div>
+              <div class="p-2 rounded bg-slate-900/80 border border-slate-800 flex justify-between"><span>Toxic Smoke</span><span class="text-rose-400 font-bold">-1 LIFE</span></div>
+              <div class="p-2 rounded bg-slate-900/80 border border-slate-800 flex justify-between"><span>Thermal Flame</span><span class="text-rose-400 font-bold">-1 LIFE</span></div>
+              <div class="p-2 rounded bg-slate-900/80 border border-slate-800 flex justify-between"><span>Oil Slick</span><span class="text-rose-400 font-bold">-1 LIFE</span></div>
+            </div>
+            <div class="mt-2 text-[11px] text-rose-300/80 font-mono">⚠ Catching hazards resets your combo streak and removes 1 health cell.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. IN-GAME VIEW -->
+    <div id="game-view" class="hidden w-full max-w-4xl mx-auto flex flex-col items-center select-none animate-fadeIn">
+      
+      <!-- HUD -->
+      <div class="w-full mb-3">
+        <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-900/90 backdrop-blur-md border border-cyan-500/30 rounded-xl px-4 py-2.5 shadow-neon-cyan">
+          <!-- Score & Multiplier -->
+          <div class="flex items-center gap-4">
+            <div>
+              <div class="text-[10px] font-mono tracking-widest uppercase text-cyan-400/80">Workshop Score</div>
+              <div id="hud-score" class="text-2xl sm:text-3xl font-black font-mono tracking-tight text-white drop-shadow-[0_0_10px_rgba(6,182,212,0.6)]">0</div>
+            </div>
+            <div id="hud-combo-badge" class="hidden items-center gap-1 bg-amber-500/20 border border-amber-400/50 rounded-lg px-2.5 py-1">
+              <span class="text-amber-400">🔥</span>
+              <span id="hud-multiplier" class="font-mono font-bold text-amber-300 text-sm">x1.0</span>
+            </div>
+          </div>
+
+          <!-- Rank & Health -->
+          <div class="flex items-center gap-5">
+            <div class="hidden sm:flex flex-col items-center">
+              <span class="text-[10px] font-mono uppercase tracking-widest text-slate-400">Diagnostic Rank</span>
+              <span id="hud-rank" class="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold border border-cyan-400 text-cyan-300 bg-cyan-950/60 shadow-sm">
+                TIER I • Apprentice Mechanic
+              </span>
+            </div>
+
+            <div class="flex flex-col items-end">
+              <span class="text-[10px] font-mono uppercase tracking-widest text-slate-400">Integrity Cells</span>
+              <div id="hud-hearts" class="flex items-center gap-1.5 mt-0.5">
+                <span class="text-xl text-rose-500">❤️</span>
+                <span class="text-xl text-rose-500">❤️</span>
+                <span class="text-xl text-rose-500">❤️</span>
+              </div>
+            </div>
+
+            <!-- HUD Action Buttons -->
+            <div class="flex items-center gap-1.5 border-l border-slate-700/60 pl-3">
+              <button id="btn-pause-game" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 hover:text-white border border-slate-700">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+              </button>
+              <button id="btn-toggle-sound" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 hover:text-white border border-slate-700">
+                <span id="sound-icon">🔊</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Emergency Directive Banner -->
+        <div id="hud-objective-banner" class="mt-2 bg-gradient-to-r from-amber-950/80 via-slate-900/90 to-amber-950/80 border border-amber-500/50 rounded-xl px-4 py-2 flex items-center justify-between shadow-neon-amber backdrop-blur-sm">
+          <div class="flex items-center gap-3">
+            <div class="p-1.5 rounded-lg bg-amber-500/20 border border-amber-400/40 text-amber-400 text-lg">⚠️</div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-mono uppercase tracking-widest text-amber-400 font-bold">EMERGENCY DIRECTIVE</span>
+                <span id="obj-bonus-tag" class="text-xs bg-amber-500/30 text-amber-200 px-2 py-0.5 rounded font-mono font-bold">+150 PTS</span>
+              </div>
+              <div id="obj-title" class="text-sm font-semibold text-white">Engine Manifold Breakdown — Catch Cyber Wrenches!</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="text-right">
+              <div id="obj-progress-txt" class="text-xs font-mono font-bold text-amber-300">0 / 4</div>
+              <div class="w-24 sm:w-32 bg-slate-800 rounded-full h-2 mt-1 border border-amber-500/30 overflow-hidden">
+                <div id="obj-progress-bar" class="bg-amber-400 h-full rounded-full transition-all duration-300 shadow-[0_0_8px_#f59e0b]" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Canvas Box -->
+      <div class="relative w-full aspect-[4/3] max-h-[72vh] rounded-2xl overflow-hidden border border-cyan-500/40 shadow-2xl shadow-cyan-950/60 bg-slate-950">
+        <canvas id="game-canvas" width="800" height="600" class="w-full h-full block cursor-crosshair touch-none"></canvas>
+        
+        <!-- Mobile Virtual Controls -->
+        <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between pointer-events-none sm:hidden">
+          <div class="flex gap-2 pointer-events-auto">
+            <button id="btn-touch-left" class="p-4 rounded-xl bg-slate-900/80 border border-cyan-500/40 text-cyan-400 active:bg-cyan-500 active:text-slate-950 shadow-neon-cyan">◀</button>
+            <button id="btn-touch-right" class="p-4 rounded-xl bg-slate-900/80 border border-cyan-500/40 text-cyan-400 active:bg-cyan-500 active:text-slate-950 shadow-neon-cyan">▶</button>
+          </div>
+          <div class="pointer-events-auto">
+            <button id="btn-touch-boost" class="px-5 py-4 rounded-xl bg-amber-500/80 border border-amber-400 text-slate-950 font-bold active:bg-amber-400 shadow-neon-amber">⚡ BOOST</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="w-full mt-2 flex items-center justify-between text-xs font-mono text-slate-400 px-2">
+        <div>Steer: <span class="text-cyan-400">[A / D]</span> or <span class="text-cyan-400">[Arrows]</span> or <span class="text-cyan-400">Mouse Drag</span></div>
+        <div>Overdrive Boost: <span class="text-amber-400">[Spacebar]</span></div>
+        <div>Pause: <span class="text-slate-300">[P]</span></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 3. GAME OVER MODAL -->
+  <div id="game-over-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn">
+    <div class="w-full max-w-xl bg-slate-900 border border-cyan-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden text-white">
+      <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-rose-500 via-amber-500 to-rose-500"></div>
+
+      <div class="text-center mb-6">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-950/70 border border-rose-500/50 text-rose-400 text-xs font-mono uppercase mb-2">
+          ⚠ Integrity Compromised • Shift Over
+        </div>
+        <h2 class="text-3xl sm:text-4xl font-black font-mono tracking-tight uppercase">Work Order Terminated</h2>
+        <div id="over-record-badge" class="hidden mt-2 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/20 border border-amber-400 text-amber-300 font-mono text-sm font-bold shadow-neon-amber animate-bounce">
+          🏆 NEW PERSONAL BEST RECORD!
+        </div>
+      </div>
+
+      <div class="bg-slate-950/80 border border-cyan-500/30 rounded-2xl p-5 text-center mb-6">
+        <div class="text-xs font-mono uppercase tracking-widest text-cyan-400 mb-1">Final Workshop Score</div>
+        <div id="over-score" class="text-4xl sm:text-5xl font-black font-mono text-white tracking-tight drop-shadow-[0_0_15px_rgba(6,182,212,0.8)]">0</div>
+        <div id="over-rank-tag" class="mt-2 inline-block px-3 py-0.5 rounded-full text-xs font-mono font-bold border border-cyan-400 text-cyan-300 bg-cyan-950/50">
+          Rank: Apprentice
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-6 text-center text-xs font-mono">
+        <div class="bg-slate-950/50 border border-slate-800 rounded-xl p-3">
+          <div id="over-tools-caught" class="text-xl font-bold text-cyan-400">0</div>
+          <div class="text-[10px] text-slate-400 uppercase mt-0.5">Tools Caught</div>
+        </div>
+        <div class="bg-slate-950/50 border border-slate-800 rounded-xl p-3">
+          <div id="over-max-combo" class="text-xl font-bold text-amber-400">0x</div>
+          <div class="text-[10px] text-slate-400 uppercase mt-0.5">Max Combo</div>
+        </div>
+        <div class="bg-slate-950/50 border border-slate-800 rounded-xl p-3">
+          <div id="over-accuracy" class="text-xl font-bold text-emerald-400">100%</div>
+          <div class="text-[10px] text-slate-400 uppercase mt-0.5">Diagnostics</div>
+        </div>
+        <div class="bg-slate-950/50 border border-slate-800 rounded-xl p-3">
+          <div id="over-hazards-hit" class="text-xl font-bold text-rose-400">0</div>
+          <div class="text-[10px] text-slate-400 uppercase mt-0.5">Hazards Hit</div>
+        </div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-3">
+        <button id="btn-over-restart" class="flex-1 py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 via-cyan-400 to-emerald-400 hover:from-cyan-400 hover:to-emerald-300 text-slate-950 font-black font-mono text-sm uppercase tracking-wider shadow-neon-cyan transition flex items-center justify-center gap-2">
+          <span>Repair Again [Space]</span>
+        </button>
+        <button id="btn-over-home" class="py-3.5 px-6 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-cyan-300 hover:text-white font-mono text-sm font-bold uppercase transition flex items-center justify-center gap-2">
+          <span>Workshop Home</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. PAUSE MODAL -->
+  <div id="pause-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
+    <div class="w-full max-w-md bg-slate-900 border border-cyan-500/40 rounded-2xl p-6 text-white text-center">
+      <div class="text-xs font-mono tracking-widest text-cyan-400 uppercase mb-1">Diagnostics Paused</div>
+      <h2 class="text-3xl font-black font-mono tracking-tight uppercase mb-4 text-white">Work Order on Hold</h2>
+      <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-3 mb-6">
+        <span class="text-xs font-mono text-slate-400">Current Score: </span>
+        <strong id="pause-score" class="text-2xl font-mono text-cyan-300 font-bold ml-1">0</strong>
+      </div>
+      <div class="flex flex-col gap-3 font-mono">
+        <button id="btn-resume-game" class="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-400 text-slate-950 font-black uppercase tracking-wider shadow-neon-cyan">
+          Resume Work Order [P]
+        </button>
+        <button id="btn-pause-restart" class="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-cyan-300 font-bold uppercase">
+          Restart Shift
+        </button>
+        <button id="btn-pause-home" class="w-full py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-xs text-slate-300">
+          Workshop Home
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. FIELD MANUAL MODAL -->
+  <div id="manual-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn">
+    <div class="w-full max-w-2xl bg-slate-900 border border-cyan-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl text-white max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-4 mb-5">
+        <div>
+          <h3 class="text-xl font-black font-mono uppercase tracking-tight text-white">Mechanic Operating Manual</h3>
+          <p class="text-xs font-mono text-cyan-400">YouFix Tool Rush • Standard Protocol</p>
+        </div>
+        <button id="btn-close-manual" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white">✕</button>
+      </div>
+      <div class="space-y-4 text-xs font-mono">
+        <div>
+          <h4 class="text-amber-400 font-bold uppercase">01. Directives</h4>
+          <p class="text-slate-300 mt-1">Steer the magnetic tool tray at the workshop floor to catch tools while dodging electrical sparks and toxic hazards.</p>
+        </div>
+        <div>
+          <h4 class="text-cyan-400 font-bold uppercase">02. Controls</h4>
+          <p class="text-slate-300 mt-1">[A / D] or [Arrows] to steer. Hold [Spacebar] for Overdrive Boost. Drag mouse or finger on canvas for smooth direct tracking.</p>
+        </div>
+        <div>
+          <h4 class="text-emerald-400 font-bold uppercase">03. Tools & Perks</h4>
+          <p class="text-slate-300 mt-1">Cyber Wrench (+10), Seal Tape (+15), Screwdriver (+20), Hydraulic Jack (+30), Multimeter (+40), Golden Wrench (+100 & 6s shield).</p>
+        </div>
+      </div>
+      <div class="mt-6 pt-4 border-t border-slate-800 flex justify-end">
+        <button id="btn-ack-manual" class="px-6 py-2 rounded-xl bg-cyan-500 text-slate-950 font-bold uppercase text-xs">Acknowledge</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="relative z-10 w-full max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-2 pt-3 mt-4 border-t border-slate-900 text-[11px] font-mono text-slate-500">
+    <div>YouFix Capstone Ecosystem • Standalone Zero-Install Edition</div>
+    <div class="text-cyan-400">60 FPS Web Audio Synthesizer • Ready to Play</div>
+  </footer>
+
+  <!-- Complete Web Audio & Canvas Game Engine Script -->
+  <script>
+    // 1. Procedural Web Audio API Synthesizer
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.isMuted = localStorage.getItem('youfix_sound_muted') === 'true';
+      }
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) this.ctx = new AudioCtx();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+      toggleMute() {
+        this.isMuted = !this.isMuted;
+        localStorage.setItem('youfix_sound_muted', String(this.isMuted));
+        return this.isMuted;
+      }
+      playCatch(pitch = 1.0) {
+        if (this.isMuted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        const base = 520 * Math.min(pitch, 2.5);
+        osc.frequency.setValueAtTime(base, now);
+        osc.frequency.exponentialRampToValueAtTime(base * 1.5, now + 0.12);
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.15);
+      }
+      playGold() {
+        if (this.isMuted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        [587, 740, 880, 1174].forEach((freq, i) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          const st = now + i * 0.05;
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, st);
+          gain.gain.setValueAtTime(0.15, st);
+          gain.gain.exponentialRampToValueAtTime(0.001, st + 0.25);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(st);
+          osc.stop(st + 0.25);
+        });
+      }
+      playHazard() {
+        if (this.isMuted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(140, now);
+        osc.frequency.exponentialRampToValueAtTime(45, now + 0.28);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.3);
+      }
+      playGameOver() {
+        if (this.isMuted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(260, now);
+        osc.frequency.exponentialRampToValueAtTime(30, now + 0.8);
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.85);
+      }
+      playUI() {
+        if (this.isMuted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, now);
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.05);
+      }
+    }
+    const sound = new SoundEngine();
+
+    // 2. Constants & Configurations
+    const TOOLS = {
+      wrench: { label: 'Cyber Wrench', points: 10, color: '#34d399', glow: 'rgba(52,211,153,0.8)', weight: 35 },
+      'duct-tape': { label: 'Seal Tape', points: 15, color: '#6ee7b7', glow: 'rgba(110,231,183,0.8)', weight: 25 },
+      screwdriver: { label: 'Precision Screwdriver', points: 20, color: '#22d3ee', glow: 'rgba(34,211,238,0.8)', weight: 20 },
+      'hydraulic-jack': { label: 'Hydraulic Jack', points: 30, color: '#2dd4bf', glow: 'rgba(45,212,191,0.8)', weight: 12 },
+      multimeter: { label: 'Digital Multimeter', points: 40, color: '#67e8f9', glow: 'rgba(103,232,249,0.8)', weight: 8 },
+      'gold-wrench': { label: 'Overdrive Golden Wrench', points: 100, color: '#facc15', glow: 'rgba(250,204,21,0.95)', weight: 3 },
+    };
+
+    const HAZARDS = {
+      spark: { label: 'Electric Spark', color: '#f87171', glow: 'rgba(248,113,113,0.95)' },
+      smoke: { label: 'Toxic Smoke', color: '#fb923c', glow: 'rgba(251,146,60,0.85)' },
+      fire: { label: 'Thermal Flame', color: '#ef4444', glow: 'rgba(239,68,68,0.95)' },
+      'oil-slick': { label: 'Oil Slick', color: '#f43f5e', glow: 'rgba(244,63,94,0.9)' },
+    };
+
+    const TIERS = {
+      APPRENTICE: { name: 'Apprentice Mechanic', badge: 'TIER I', minScore: 0, speed: 3.2, interval: 1100, hazardRatio: 0.22, color: '#38bdf8' },
+      TECHNICIAN: { name: 'Certified Technician', badge: 'TIER II', minScore: 250, speed: 4.8, interval: 850, hazardRatio: 0.32, color: '#34d399' },
+      MASTER: { name: 'Master Craftsman', badge: 'TIER III', minScore: 800, speed: 6.6, interval: 650, hazardRatio: 0.42, color: '#f59e0b' },
+      CYBER_SPECIALIST: { name: 'Cyber Specialist', badge: 'OVERDRIVE', minScore: 1600, speed: 8.8, interval: 500, hazardRatio: 0.50, color: '#ec4899' },
+    };
+
+    const OBJECTIVES_POOL = [
+      { title: 'Hydraulic Cylinder Leak', tool: 'duct-tape', required: 3, bonus: 120 },
+      { title: 'Engine Manifold Breakdown', tool: 'wrench', required: 4, bonus: 150 },
+      { title: 'Cyber Deck Short Circuit', tool: 'screwdriver', required: 3, bonus: 160 },
+      { title: 'Chassis Alignment Malfunction', tool: 'hydraulic-jack', required: 2, bonus: 200 },
+      { title: 'High-Voltage Power Surge', tool: 'multimeter', required: 2, bonus: 250 },
+    ];
+
+    // 3. Game Engine State
+    const state = {
+      view: 'HOME',
+      status: 'IDLE',
+      score: 0,
+      lives: 3,
+      maxLives: 3,
+      combo: 0,
+      maxCombo: 0,
+      multiplier: 1.0,
+      toolsCaught: 0,
+      hazardsHit: 0,
+      tier: 'APPRENTICE',
+      objective: null,
+      width: 800,
+      height: 600,
+      player: {
+        x: 350,
+        y: 530,
+        width: 110,
+        height: 22,
+        speed: 550,
+        hasShield: false,
+        shieldDuration: 0,
+        lastHit: 0,
+      },
+      items: [],
+      particles: [],
+      floaters: [],
+      lastSpawn: 0,
+      lastFrame: performance.now(),
+      screenShake: 0,
+      keys: { left: false, right: false, boost: false },
+      touchSteer: 0,
+      isPointer: false,
+      pointerX: 350,
+    };
+
+    // DOM Elements
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    const homeView = document.getElementById('home-view');
+    const gameView = document.getElementById('game-view');
+    const gameOverModal = document.getElementById('game-over-modal');
+    const pauseModal = document.getElementById('pause-modal');
+    const manualModal = document.getElementById('manual-modal');
+
+    // Load High Score on Home
+    function updateHighScoreHome() {
+      const saved = localStorage.getItem('youfix_high_score_record');
+      if (saved) {
+        const record = JSON.parse(saved);
+        document.getElementById('home-record-val').textContent = Number(record.score || 0).toLocaleString();
+        document.getElementById('home-record-meta').textContent = `(${record.tier} • ${record.accuracy}% ACCURACY)`;
+        document.getElementById('home-record-banner').classList.remove('hidden');
+      }
+    }
+    updateHighScoreHome();
+
+    function spawnObjective() {
+      const template = OBJECTIVES_POOL[Math.floor(Math.random() * OBJECTIVES_POOL.length)];
+      state.objective = { ...template, collected: 0 };
+      updateObjectiveHUD();
+    }
+
+    function updateObjectiveHUD() {
+      if (!state.objective) return;
+      const tool = TOOLS[state.objective.tool];
+      document.getElementById('obj-title').textContent = `${state.objective.title} — Catch ${tool.label}s!`;
+      document.getElementById('obj-bonus-tag').textContent = `+${state.objective.bonus} PTS`;
+      document.getElementById('obj-progress-txt').textContent = `${state.objective.collected} / ${state.objective.required}`;
+      const pct = Math.min(100, (state.objective.collected / state.objective.required) * 100);
+      document.getElementById('obj-progress-bar').style.width = `${pct}%`;
+    }
+
+    function syncHUD() {
+      document.getElementById('hud-score').textContent = state.score.toLocaleString();
+      
+      // Multiplier
+      const comboBadge = document.getElementById('hud-combo-badge');
+      if (state.combo > 1) {
+        comboBadge.classList.remove('hidden');
+        comboBadge.classList.add('flex');
+        document.getElementById('hud-multiplier').textContent = `x${state.multiplier.toFixed(1)} (${state.combo} STREAK)`;
+      } else {
+        comboBadge.classList.add('hidden');
+        comboBadge.classList.remove('flex');
+      }
+
+      // Rank
+      const tierConfig = TIERS[state.tier];
+      const rankEl = document.getElementById('hud-rank');
+      rankEl.textContent = `${tierConfig.badge} • ${tierConfig.name}`;
+      rankEl.style.borderColor = tierConfig.color;
+      rankEl.style.color = tierConfig.color;
+
+      // Hearts
+      const heartsContainer = document.getElementById('hud-hearts');
+      heartsContainer.innerHTML = '';
+      for (let i = 0; i < state.maxLives; i++) {
+        const span = document.createElement('span');
+        span.className = i < state.lives ? 'text-xl text-rose-500' : 'text-xl text-slate-700 opacity-30';
+        span.textContent = '❤️';
+        heartsContainer.appendChild(span);
+      }
+    }
+
+    function startGame() {
+      sound.playGold();
+      state.score = 0;
+      state.lives = 3;
+      state.combo = 0;
+      state.maxCombo = 0;
+      state.multiplier = 1.0;
+      state.toolsCaught = 0;
+      state.hazardsHit = 0;
+      state.tier = 'APPRENTICE';
+      state.items = [];
+      state.particles = [];
+      state.floaters = [];
+      state.player.x = 350;
+      state.player.hasShield = false;
+      state.player.shieldDuration = 0;
+      state.status = 'PLAYING';
+      state.lastFrame = performance.now();
+      state.lastSpawn = performance.now();
+
+      spawnObjective();
+      syncHUD();
+
+      homeView.classList.add('hidden');
+      gameView.classList.remove('hidden');
+      gameOverModal.classList.add('hidden');
+      pauseModal.classList.add('hidden');
+    }
+
+    function triggerGameOver() {
+      state.status = 'GAMEOVER';
+      sound.playGameOver();
+
+      const total = state.toolsCaught + state.hazardsHit;
+      const accuracy = total > 0 ? Math.round((state.toolsCaught / total) * 100) : 100;
+      const tierConfig = TIERS[state.tier];
+
+      document.getElementById('over-score').textContent = state.score.toLocaleString();
+      document.getElementById('over-rank-tag').textContent = `Rank: ${tierConfig.badge} • ${tierConfig.name}`;
+      document.getElementById('over-tools-caught').textContent = state.toolsCaught;
+      document.getElementById('over-max-combo').textContent = `${state.maxCombo}x`;
+      document.getElementById('over-accuracy').textContent = `${accuracy}%`;
+      document.getElementById('over-hazards-hit').textContent = state.hazardsHit;
+
+      // Save Record
+      const savedStr = localStorage.getItem('youfix_high_score_record');
+      const saved = savedStr ? JSON.parse(savedStr) : null;
+      if (!saved || state.score > saved.score) {
+        document.getElementById('over-record-badge').classList.remove('hidden');
+        localStorage.setItem('youfix_high_score_record', JSON.stringify({
+          score: state.score,
+          tier: state.tier,
+          accuracy,
+          date: new Date().toLocaleDateString()
+        }));
+      } else {
+        document.getElementById('over-record-badge').classList.add('hidden');
+      }
+
+      gameOverModal.classList.remove('hidden');
+    }
+
+    // 4. Main 60 FPS Engine
+    function loop(now) {
+      const dt = Math.min((now - state.lastFrame) / 1000, 0.1);
+      state.lastFrame = now;
+
+      if (state.status === 'PLAYING') {
+        // Tier scaling
+        if (state.score >= TIERS.CYBER_SPECIALIST.minScore) state.tier = 'CYBER_SPECIALIST';
+        else if (state.score >= TIERS.MASTER.minScore) state.tier = 'MASTER';
+        else if (state.score >= TIERS.TECHNICIAN.minScore) state.tier = 'TECHNICIAN';
+        else state.tier = 'APPRENTICE';
+
+        const tierConfig = TIERS[state.tier];
+        const speedScale = 1 + Math.min(state.score / 2500, 1.2);
+        const spawnInterval = tierConfig.interval / speedScale;
+
+        // Shield countdown
+        if (state.player.hasShield) {
+          state.player.shieldDuration -= dt;
+          if (state.player.shieldDuration <= 0) state.player.hasShield = false;
+        }
+
+        // Screen Shake
+        if (state.screenShake > 0) {
+          state.screenShake = Math.max(0, state.screenShake - dt * 25);
+        }
+
+        // Player Movement
+        const moveSpeed = state.keys.boost ? state.player.speed * 1.75 : state.player.speed;
+        if (state.isPointer) {
+          const dx = state.pointerX - state.player.x;
+          state.player.x += dx * Math.min(dt * 18, 1);
+        } else {
+          let dir = 0;
+          if (state.keys.left || state.touchSteer < 0) dir -= 1;
+          if (state.keys.right || state.touchSteer > 0) dir += 1;
+          state.player.x += dir * moveSpeed * dt;
+        }
+        state.player.x = Math.max(10, Math.min(state.width - state.player.width - 10, state.player.x));
+
+        // Spawn Items
+        if (now - state.lastSpawn > spawnInterval) {
+          state.lastSpawn = now;
+          const isHazard = Math.random() < tierConfig.hazardRatio;
+          const spawnX = 30 + Math.random() * (state.width - 80);
+
+          if (isHazard) {
+            const hazardKeys = Object.keys(HAZARDS);
+            const key = hazardKeys[Math.floor(Math.random() * hazardKeys.length)];
+            const conf = HAZARDS[key];
+            state.items.push({
+              category: 'hazard',
+              type: key,
+              label: conf.label,
+              points: 0,
+              x: spawnX,
+              y: -40,
+              width: 32,
+              height: 32,
+              speed: (tierConfig.speed * 60 + Math.random() * 30) * speedScale,
+              rotation: Math.random() * Math.PI,
+              rotSpeed: (Math.random() - 0.5) * 5,
+              color: conf.color,
+              glow: conf.glow,
+            });
+          } else {
+            const toolKeys = Object.keys(TOOLS);
+            const totalW = toolKeys.reduce((a, k) => a + TOOLS[k].weight, 0);
+            let rand = Math.random() * totalW;
+            let selKey = 'wrench';
+            for (const k of toolKeys) {
+              if (rand < TOOLS[k].weight) { selKey = k; break; }
+              rand -= TOOLS[k].weight;
+            }
+            const conf = TOOLS[selKey];
+            state.items.push({
+              category: 'tool',
+              type: selKey,
+              label: conf.label,
+              points: conf.points,
+              x: spawnX,
+              y: -40,
+              width: selKey === 'gold-wrench' ? 38 : 34,
+              height: selKey === 'gold-wrench' ? 38 : 34,
+              speed: (tierConfig.speed * 55 + Math.random() * 25) * speedScale,
+              rotation: Math.random() * Math.PI,
+              rotSpeed: (Math.random() - 0.5) * 4,
+              color: conf.color,
+              glow: conf.glow,
+            });
+          }
+        }
+
+        // Update Items & Collision
+        const remaining = [];
+        const pBox = state.player;
+        for (const item of state.items) {
+          item.y += item.speed * dt;
+          item.rotation += item.rotSpeed * dt;
+
+          const collides = 
+            item.x + item.width * 0.8 > pBox.x &&
+            item.x + item.width * 0.2 < pBox.x + pBox.width &&
+            item.y + item.height > pBox.y &&
+            item.y < pBox.y + pBox.height;
+
+          if (collides) {
+            if (item.category === 'tool') {
+              state.toolsCaught++;
+              state.combo++;
+              if (state.combo > state.maxCombo) state.maxCombo = state.combo;
+              state.multiplier = Math.min(4.0, 1.0 + Math.floor(state.combo / 4) * 0.5);
+              const earned = Math.round(item.points * state.multiplier);
+              state.score += earned;
+
+              if (item.type === 'gold-wrench') {
+                state.player.hasShield = true;
+                state.player.shieldDuration = 6.0;
+                sound.playGold();
+                state.floaters.push({ text: `OVERDRIVE SHIELD! +${earned}`, x: item.x, y: item.y - 10, color: '#facc15', opacity: 1, scale: 1.2 });
+              } else {
+                sound.playCatch(state.multiplier);
+                state.floaters.push({ text: `+${earned}${state.combo > 3 ? ` (${state.multiplier.toFixed(1)}x)` : ''}`, x: item.x, y: item.y, color: item.color, opacity: 1, scale: 1.0 });
+              }
+
+              // Check Objective
+              if (state.objective && state.objective.tool === item.type) {
+                state.objective.collected++;
+                if (state.objective.collected >= state.objective.required) {
+                  sound.playGold();
+                  state.score += state.objective.bonus;
+                  state.floaters.push({ text: `DIRECTIVE COMPLETE! +${state.objective.bonus}`, x: state.width / 2 - 120, y: state.height / 2, color: '#34d399', opacity: 1, scale: 1.3 });
+                  spawnObjective();
+                } else {
+                  updateObjectiveHUD();
+                }
+              }
+
+              // Sparks
+              for (let i = 0; i < 14; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const spd = 40 + Math.random() * 160;
+                state.particles.push({ x: item.x + item.width/2, y: item.y + item.height/2, vx: Math.cos(angle)*spd, vy: Math.sin(angle)*spd - 50, color: item.color, size: 2.5, life: 0.5, maxLife: 0.5 });
+              }
+            } else {
+              // Hazard Hit
+              if (state.player.hasShield) {
+                sound.playUI();
+                state.floaters.push({ text: 'HAZARD DEFLECTED!', x: item.x, y: item.y, color: '#38bdf8', opacity: 1, scale: 1.1 });
+              } else {
+                state.lives--;
+                state.combo = 0;
+                state.multiplier = 1.0;
+                state.hazardsHit++;
+                state.screenShake = 12;
+                state.player.lastHit = now;
+                sound.playHazard();
+                state.floaters.push({ text: '-1 INTEGRITY!', x: item.x, y: item.y, color: '#ef4444', opacity: 1, scale: 1.3 });
+
+                for (let i = 0; i < 24; i++) {
+                  state.particles.push({ x: item.x + item.width/2, y: item.y + item.height/2, vx: (Math.random()-0.5)*320, vy: (Math.random()-0.5)*320, color: '#ef4444', size: 3.5, life: 0.6, maxLife: 0.6 });
+                }
+
+                if (state.lives <= 0) {
+                  syncHUD();
+                  triggerGameOver();
+                  break;
+                }
+              }
+            }
+          } else if (item.y <= state.height + 40) {
+            remaining.push(item);
+          }
+        }
+        state.items = remaining;
+
+        // Update Particles & Floaters
+        state.particles = state.particles.filter(p => {
+          p.x += p.vx * dt;
+          p.y += p.vy * dt;
+          p.vy += 120 * dt;
+          p.life -= dt;
+          return p.life > 0;
+        });
+
+        state.floaters = state.floaters.filter(f => {
+          f.y -= 45 * dt;
+          f.opacity -= 1.2 * dt;
+          return f.opacity > 0;
+        });
+
+        syncHUD();
+      }
+
+      // Render
+      ctx.save();
+      if (state.screenShake > 0) {
+        ctx.translate((Math.random()-0.5)*state.screenShake, (Math.random()-0.5)*state.screenShake);
+      }
+
+      // Background
+      ctx.fillStyle = '#030712';
+      ctx.fillRect(0, 0, state.width, state.height);
+
+      // Grid
+      ctx.strokeStyle = 'rgba(6, 182, 212, 0.08)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < state.width; x += 40) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, state.height); ctx.stroke();
+      }
+      for (let y = 0; y < state.height; y += 40) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(state.width, y); ctx.stroke();
+      }
+
+      // Laser boundary
+      ctx.strokeStyle = 'rgba(244, 63, 94, 0.3)';
+      ctx.setLineDash([8, 8]);
+      ctx.beginPath();
+      ctx.moveTo(0, state.player.y + state.player.height + 14);
+      ctx.lineTo(state.width, state.player.y + state.player.height + 14);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Draw Items — Tools (green/cyan aura) vs Hazards (red/amber pulsing danger)
+      const pulsePhase = Math.sin(now * 0.008) * 0.5 + 0.5; // 0..1 pulse for hazard glow
+
+      for (const item of state.items) {
+        ctx.save();
+        ctx.translate(item.x + item.width/2, item.y + item.height/2);
+
+        if (item.category === 'tool') {
+          // ─── TOOL: Soft green/cyan background disc + clean icon ───
+          const isGold = item.type === 'gold-wrench';
+          const auraRadius = isGold ? 26 : 22;
+
+          // Outer glow aura disc
+          ctx.shadowColor = isGold ? 'rgba(250,204,21,0.9)' : 'rgba(52,211,153,0.7)';
+          ctx.shadowBlur = isGold ? 28 : 18;
+          ctx.fillStyle = isGold ? 'rgba(250,204,21,0.18)' : 'rgba(16,185,129,0.15)';
+          ctx.beginPath(); ctx.arc(0, 0, auraRadius, 0, Math.PI*2); ctx.fill();
+
+          // Inner filled circle (badge background)
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = isGold ? 'rgba(250,204,21,0.30)' : 'rgba(16,185,129,0.28)';
+          ctx.strokeStyle = isGold ? '#facc15' : '#34d399';
+          ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.arc(0, 0, 17, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+
+          // Icon inside — white crisp shapes
+          ctx.rotate(item.rotation * 0.3); // gentle rotation only
+          ctx.fillStyle = isGold ? '#fef08a' : '#ffffff';
+          ctx.strokeStyle = isGold ? '#eab308' : '#d1fae5';
+          ctx.lineWidth = 1.5;
+
+          if (item.type === 'wrench' || item.type === 'gold-wrench') {
+            // Wrench icon
+            ctx.beginPath();
+            ctx.moveTo(-3, -12); ctx.lineTo(-7, -8); ctx.arc(0, -6, 7, Math.PI+0.3, Math.PI*2-0.3, false);
+            ctx.lineTo(3, -12); ctx.closePath(); ctx.fill(); ctx.stroke();
+            ctx.fillRect(-2.5, -7, 5, 16);
+            ctx.strokeRect(-2.5, -7, 5, 16);
+            ctx.beginPath(); ctx.arc(0, 10, 4, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+          } else if (item.type === 'duct-tape') {
+            // Tape roll icon
+            ctx.beginPath(); ctx.arc(0, 0, 11, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = isGold ? 'rgba(250,204,21,0.30)' : 'rgba(16,185,129,0.28)';
+            ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI*2); ctx.fill();
+            ctx.strokeStyle = '#d1fae5'; ctx.stroke();
+          } else if (item.type === 'screwdriver') {
+            // Screwdriver icon
+            ctx.fillStyle = '#a7f3d0'; // green handle
+            ctx.beginPath();
+            ctx.roundRect(-5, -12, 10, 10, 2); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = '#e2e8f0'; // silver shaft
+            ctx.fillRect(-2, -2, 4, 14); ctx.strokeRect(-2, -2, 4, 14);
+            // Tip
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath(); ctx.moveTo(-2, 12); ctx.lineTo(0, 16); ctx.lineTo(2, 12); ctx.fill();
+          } else if (item.type === 'hydraulic-jack') {
+            // Jack / lift icon — upward arrow on platform
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(-10, 7, 20, 4); ctx.strokeRect(-10, 7, 20, 4);
+            ctx.fillRect(-3, -2, 6, 10); ctx.strokeRect(-3, -2, 6, 10);
+            ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(-7, -2); ctx.lineTo(7, -2); ctx.closePath();
+            ctx.fill(); ctx.stroke();
+          } else {
+            // Multimeter icon — rectangle with display
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath(); ctx.roundRect(-9, -12, 18, 24, 3); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = '#065f46'; // dark teal screen
+            ctx.fillRect(-6, -9, 12, 8);
+            ctx.fillStyle = '#6ee7b7'; // reading display text
+            ctx.font = 'bold 6px monospace'; ctx.textAlign = 'center';
+            ctx.fillText('V~', 0, -3);
+            // Probe dots
+            ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(-3, 8, 2, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#111827'; ctx.beginPath(); ctx.arc(3, 8, 2, 0, Math.PI*2); ctx.fill();
+          }
+
+          // Points label below tool
+          ctx.rotate(-item.rotation * 0.3);
+          ctx.font = 'bold 9px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillStyle = isGold ? '#fde047' : '#6ee7b7';
+          ctx.shadowColor = isGold ? '#facc15' : '#10b981';
+          ctx.shadowBlur = 6;
+          ctx.fillText('+' + item.points, 0, 30);
+
+        } else {
+          // ─── HAZARD: Aggressive red/amber pulsing danger aura ───
+          const pulseRadius = 24 + pulsePhase * 6; // breathing aura
+          const pulseAlpha = 0.12 + pulsePhase * 0.15;
+
+          // Outer pulsing red danger aura
+          ctx.shadowColor = item.glow;
+          ctx.shadowBlur = 20 + pulsePhase * 12;
+          ctx.fillStyle = `rgba(239, 68, 68, ${pulseAlpha})`;
+          ctx.beginPath(); ctx.arc(0, 0, pulseRadius, 0, Math.PI*2); ctx.fill();
+
+          // Inner red ring
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = 'rgba(127, 29, 29, 0.55)';
+          ctx.strokeStyle = item.color;
+          ctx.lineWidth = 2.5;
+          ctx.setLineDash([4, 3]);
+          ctx.beginPath(); ctx.arc(0, 0, 17, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+          ctx.setLineDash([]);
+
+          // Icon inside — bright danger symbols
+          ctx.rotate(item.rotation * 0.4);
+          ctx.fillStyle = item.color;
+          ctx.strokeStyle = '#fecaca';
+          ctx.lineWidth = 1.5;
+
+          if (item.type === 'spark') {
+            // Lightning bolt icon ⚡
+            ctx.beginPath();
+            ctx.moveTo(2, -13);
+            ctx.lineTo(-6, -1);
+            ctx.lineTo(-1, -1);
+            ctx.lineTo(-4, 13);
+            ctx.lineTo(7, 0);
+            ctx.lineTo(2, 0);
+            ctx.closePath();
+            ctx.fill(); ctx.stroke();
+            // Secondary small bolt
+            ctx.globalAlpha = 0.5;
+            ctx.beginPath();
+            ctx.moveTo(7, -8); ctx.lineTo(3, -2); ctx.lineTo(5, -2); ctx.lineTo(3, 4); ctx.lineTo(9, -3); ctx.lineTo(7, -3);
+            ctx.closePath(); ctx.fill();
+            ctx.globalAlpha = 1.0;
+          } else if (item.type === 'fire') {
+            // Flame icon 🔥
+            ctx.beginPath();
+            ctx.moveTo(0, -13);
+            ctx.quadraticCurveTo(10, -5, 9, 4);
+            ctx.quadraticCurveTo(8, 12, 0, 13);
+            ctx.quadraticCurveTo(-8, 12, -9, 4);
+            ctx.quadraticCurveTo(-10, -5, 0, -13);
+            ctx.fill(); ctx.stroke();
+            // Inner bright core
+            ctx.fillStyle = '#fbbf24';
+            ctx.beginPath();
+            ctx.moveTo(0, -3);
+            ctx.quadraticCurveTo(5, 2, 4, 7);
+            ctx.quadraticCurveTo(0, 11, -4, 7);
+            ctx.quadraticCurveTo(-5, 2, 0, -3);
+            ctx.fill();
+          } else if (item.type === 'smoke') {
+            // Skull-like toxic cloud ☠
+            ctx.fillStyle = '#fb923c';
+            ctx.beginPath(); ctx.arc(-5, -2, 8, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+            ctx.beginPath(); ctx.arc(5, -2, 8, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+            ctx.beginPath(); ctx.arc(0, 5, 7, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+            // X eyes for danger
+            ctx.strokeStyle = '#7f1d1d'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(-7, -4); ctx.lineTo(-3, 0); ctx.moveTo(-3, -4); ctx.lineTo(-7, 0); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(3, -4); ctx.lineTo(7, 0); ctx.moveTo(7, -4); ctx.lineTo(3, 0); ctx.stroke();
+          } else {
+            // Oil slick — hazard triangle with ! ⚠
+            ctx.beginPath();
+            ctx.moveTo(0, -14);
+            ctx.lineTo(-13, 11);
+            ctx.lineTo(13, 11);
+            ctx.closePath();
+            ctx.fill(); ctx.stroke();
+            // Exclamation mark inside
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 14px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('!', 0, 8);
+          }
+
+          // DANGER label below hazard
+          ctx.rotate(-item.rotation * 0.4);
+          ctx.font = 'bold 8px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillStyle = '#fca5a5';
+          ctx.shadowColor = '#ef4444';
+          ctx.shadowBlur = 8;
+          ctx.fillText('DANGER', 0, 30);
+        }
+
+        ctx.restore();
+      }
+
+      // Draw Player Tray
+      const p = state.player;
+      ctx.save();
+      const isBoosting = state.keys.boost;
+      ctx.fillStyle = isBoosting ? '#f59e0b' : '#06b6d4';
+      ctx.shadowColor = isBoosting ? 'rgba(245, 158, 11, 0.9)' : 'rgba(6, 182, 212, 0.8)';
+      ctx.shadowBlur = 12;
+
+      // Thrusters
+      const flmH = isBoosting ? 18 + Math.random()*8 : 8 + Math.random()*4;
+      ctx.beginPath(); ctx.moveTo(p.x + 12, p.y + p.height); ctx.lineTo(p.x + 18, p.y + p.height + flmH); ctx.lineTo(p.x + 24, p.y + p.height); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(p.x + p.width - 24, p.y + p.height); ctx.lineTo(p.x + p.width - 18, p.y + p.height + flmH); ctx.lineTo(p.x + p.width - 12, p.y + p.height); ctx.fill();
+
+      // Shield Bubble
+      if (p.hasShield) {
+        ctx.strokeStyle = '#facc15'; ctx.lineWidth = 3; ctx.shadowColor = '#facc15'; ctx.shadowBlur = 20;
+        ctx.beginPath(); ctx.ellipse(p.x + p.width/2, p.y + p.height/2, p.width/2 + 14, 28, 0, 0, Math.PI*2); ctx.stroke();
+      }
+
+      // Tray Body
+      const isHit = now - p.lastHit < 250;
+      ctx.fillStyle = isHit ? '#ef4444' : '#0f172a';
+      ctx.strokeStyle = isHit ? '#f87171' : '#38bdf8';
+      ctx.lineWidth = 2;
+      ctx.shadowColor = isHit ? '#ef4444' : '#06b6d4';
+      ctx.shadowBlur = 16;
+      ctx.beginPath();
+      ctx.roundRect(p.x, p.y, p.width, p.height, [8, 8, 4, 4]);
+      ctx.fill(); ctx.stroke();
+
+      // Top Magnet Induction Bar
+      ctx.fillStyle = isHit ? '#fca5a5' : '#38bdf8';
+      ctx.fillRect(p.x + 6, p.y + 2, p.width - 12, 4);
+
+      // Label
+      ctx.fillStyle = '#ffffff'; ctx.font = 'bold 9px monospace'; ctx.textAlign = 'center';
+      ctx.fillText('YOUFIX REPAIR', p.x + p.width/2, p.y + 14);
+      ctx.restore();
+
+      // Particles
+      for (const pt of state.particles) {
+        ctx.save();
+        ctx.fillStyle = pt.color; ctx.shadowColor = pt.color; ctx.shadowBlur = 8;
+        ctx.globalAlpha = Math.max(0, pt.life / pt.maxLife);
+        ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+      }
+
+      // Floaters
+      for (const ft of state.floaters) {
+        ctx.save();
+        ctx.font = `bold ${Math.round(14 * ft.scale)}px monospace`;
+        ctx.fillStyle = ft.color; ctx.shadowColor = ft.color; ctx.shadowBlur = 10;
+        ctx.globalAlpha = ft.opacity;
+        ctx.fillText(ft.text, ft.x, ft.y);
+        ctx.restore();
+      }
+
+      ctx.restore();
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+
+    // 5. Controls & Listeners
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { state.keys.left = true; state.isPointer = false; }
+      if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { state.keys.right = true; state.isPointer = false; }
+      if (e.key === ' ') {
+        e.preventDefault();
+        state.keys.boost = true;
+        if (state.status === 'GAMEOVER') startGame();
+      }
+      if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') {
+        if (state.status === 'PLAYING') {
+          state.status = 'PAUSED';
+          document.getElementById('pause-score').textContent = state.score.toLocaleString();
+          pauseModal.classList.remove('hidden');
+        } else if (state.status === 'PAUSED') {
+          state.status = 'PLAYING';
+          pauseModal.classList.add('hidden');
+        }
+      }
+      if (e.key === 'm' || e.key === 'M') {
+        const muted = sound.toggleMute();
+        document.getElementById('sound-icon').textContent = muted ? '🔇' : '🔊';
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') state.keys.left = false;
+      if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') state.keys.right = false;
+      if (e.key === ' ') state.keys.boost = false;
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = state.width / rect.width;
+      const clientX = e.clientX - rect.left;
+      state.isPointer = true;
+      state.pointerX = Math.max(0, Math.min(state.width - state.player.width, clientX * scaleX - state.player.width / 2));
+    });
+
+    // Touch button handlers
+    const btnTouchLeft = document.getElementById('btn-touch-left');
+    const btnTouchRight = document.getElementById('btn-touch-right');
+    const btnTouchBoost = document.getElementById('btn-touch-boost');
+
+    btnTouchLeft.addEventListener('pointerdown', () => { state.touchSteer = -1; state.isPointer = false; });
+    btnTouchLeft.addEventListener('pointerup', () => { state.touchSteer = 0; });
+    btnTouchLeft.addEventListener('pointerleave', () => { state.touchSteer = 0; });
+
+    btnTouchRight.addEventListener('pointerdown', () => { state.touchSteer = 1; state.isPointer = false; });
+    btnTouchRight.addEventListener('pointerup', () => { state.touchSteer = 0; });
+    btnTouchRight.addEventListener('pointerleave', () => { state.touchSteer = 0; });
+
+    btnTouchBoost.addEventListener('pointerdown', () => { state.keys.boost = true; });
+    btnTouchBoost.addEventListener('pointerup', () => { state.keys.boost = false; });
+    btnTouchBoost.addEventListener('pointerleave', () => { state.keys.boost = false; });
+
+    // UI Buttons
+    document.getElementById('btn-start-game').addEventListener('click', startGame);
+    document.getElementById('btn-over-restart').addEventListener('click', startGame);
+    document.getElementById('btn-pause-restart').addEventListener('click', startGame);
+
+    const goHome = () => {
+      sound.playUI();
+      state.status = 'IDLE';
+      gameOverModal.classList.add('hidden');
+      pauseModal.classList.add('hidden');
+      gameView.classList.add('hidden');
+      homeView.classList.remove('hidden');
+      updateHighScoreHome();
+    };
+    document.getElementById('btn-brand-home').addEventListener('click', goHome);
+    document.getElementById('btn-over-home').addEventListener('click', goHome);
+    document.getElementById('btn-pause-home').addEventListener('click', goHome);
+
+    document.getElementById('btn-pause-game').addEventListener('click', () => {
+      sound.playUI();
+      state.status = 'PAUSED';
+      document.getElementById('pause-score').textContent = state.score.toLocaleString();
+      pauseModal.classList.remove('hidden');
+    });
+
+    document.getElementById('btn-resume-game').addEventListener('click', () => {
+      sound.playUI();
+      state.status = 'PLAYING';
+      pauseModal.classList.add('hidden');
+    });
+
+    document.getElementById('btn-toggle-sound').addEventListener('click', () => {
+      const muted = sound.toggleMute();
+      document.getElementById('sound-icon').textContent = muted ? '🔇' : '🔊';
+    });
+
+    const openManual = () => { sound.playUI(); manualModal.classList.remove('hidden'); };
+    const closeManual = () => { sound.playUI(); manualModal.classList.add('hidden'); };
+    document.getElementById('btn-open-manual').addEventListener('click', openManual);
+    document.getElementById('btn-manual-home').addEventListener('click', openManual);
+    document.getElementById('btn-close-manual').addEventListener('click', closeManual);
+    document.getElementById('btn-ack-manual').addEventListener('click', closeManual);
+  </script>
+</body>
+</html>
