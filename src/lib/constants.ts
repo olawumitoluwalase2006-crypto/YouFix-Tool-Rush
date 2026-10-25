@@ -24,8 +24,8 @@ export const TOOLS_CONFIG: Record<ToolType, ToolConfig> = {
     type: 'wrench',
     label: 'Cyber Wrench',
     points: 10,
-    color: '#38bdf8', // sky-400
-    glowColor: 'rgba(56, 189, 248, 0.7)',
+    color: '#34d399', // emerald-400
+    glowColor: 'rgba(52, 211, 153, 0.8)',
     weight: 35,
     description: 'Fundamental torquing tool. Fast & reliable.',
   },
@@ -33,8 +33,8 @@ export const TOOLS_CONFIG: Record<ToolType, ToolConfig> = {
     type: 'duct-tape',
     label: 'Industrial Seal Tape',
     points: 15,
-    color: '#34d399', // emerald-400
-    glowColor: 'rgba(52, 211, 153, 0.7)',
+    color: '#6ee7b7', // emerald-300
+    glowColor: 'rgba(110, 231, 183, 0.8)',
     weight: 25,
     description: 'Quick-patch emergency sealing adhesive.',
   },
@@ -42,8 +42,8 @@ export const TOOLS_CONFIG: Record<ToolType, ToolConfig> = {
     type: 'screwdriver',
     label: 'Precision Screwdriver',
     points: 20,
-    color: '#fbbf24', // amber-400
-    glowColor: 'rgba(251, 191, 36, 0.7)',
+    color: '#22d3ee', // cyan-400
+    glowColor: 'rgba(34, 211, 238, 0.8)',
     weight: 20,
     description: 'Fine electronics calibrate & fastening.',
   },
@@ -51,8 +51,8 @@ export const TOOLS_CONFIG: Record<ToolType, ToolConfig> = {
     type: 'hydraulic-jack',
     label: 'Heavy Hydraulic Jack',
     points: 30,
-    color: '#a78bfa', // purple-400
-    glowColor: 'rgba(167, 139, 250, 0.7)',
+    color: '#2dd4bf', // teal-400
+    glowColor: 'rgba(45, 212, 191, 0.8)',
     weight: 12,
     description: 'High-capacity stabilizer for heavy machinery.',
   },
@@ -60,8 +60,8 @@ export const TOOLS_CONFIG: Record<ToolType, ToolConfig> = {
     type: 'multimeter',
     label: 'Digital Multimeter',
     points: 40,
-    color: '#f43f5e', // rose-500
-    glowColor: 'rgba(244, 63, 94, 0.7)',
+    color: '#67e8f9', // cyan-300
+    glowColor: 'rgba(103, 232, 249, 0.8)',
     weight: 8,
     description: 'Critical voltage & diagnostic testing.',
   },
@@ -80,16 +80,16 @@ export const HAZARDS_CONFIG: Record<HazardType, HazardConfig> = {
   spark: {
     type: 'spark',
     label: 'Electrical Arc Spark',
-    color: '#60a5fa', // electric blue
-    glowColor: 'rgba(96, 165, 250, 0.9)',
+    color: '#f87171', // red-400
+    glowColor: 'rgba(248, 113, 113, 0.95)',
     weight: 35,
     description: 'High-voltage leakage. Blasts circuit breaker.',
   },
   smoke: {
     type: 'smoke',
     label: 'Toxic Exhaust Fume',
-    color: '#94a3b8', // slate-400
-    glowColor: 'rgba(148, 163, 184, 0.6)',
+    color: '#fb923c', // amber-400 / orange
+    glowColor: 'rgba(251, 146, 60, 0.85)',
     weight: 25,
     description: 'Choking smoke reduces workshop visibility.',
   },
@@ -97,15 +97,15 @@ export const HAZARDS_CONFIG: Record<HazardType, HazardConfig> = {
     type: 'fire',
     label: 'Thermal Flash Flame',
     color: '#ef4444', // red-500
-    glowColor: 'rgba(239, 68, 68, 0.9)',
+    glowColor: 'rgba(239, 68, 68, 0.95)',
     weight: 25,
     description: 'Rogue thermal runaway explosion hazard.',
   },
   'oil-slick': {
     type: 'oil-slick',
     label: 'Synthetic Oil Spill',
-    color: '#1e293b', // slate-800 with purple sheen
-    glowColor: 'rgba(147, 51, 234, 0.8)',
+    color: '#f43f5e', // rose-500
+    glowColor: 'rgba(244, 63, 94, 0.9)',
     weight: 15,
     description: 'Slippery fluid that destabilizes mechanics.',
   },

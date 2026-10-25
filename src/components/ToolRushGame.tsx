@@ -622,112 +622,247 @@ export const ToolRushGame: React.FC<ToolRushGameProps> = ({ onReturnHome }) => {
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Draw Falling Items
+      // Draw Falling Items — Tools (vibrant emerald/cyan aura) vs Hazards (pulsing red/amber danger aura)
+      const pulsePhase = Math.sin(currentTime * 0.008) * 0.5 + 0.5;
+
       for (const item of s.items) {
         ctx.save();
         ctx.translate(item.x + item.width / 2, item.y + item.height / 2);
-        ctx.rotate(item.rotation);
-
-        // Glow Aura
-        ctx.shadowColor = item.glowColor;
-        ctx.shadowBlur = item.category === 'hazard' ? 14 : 10;
 
         if (item.category === 'tool') {
-          // TOOL ICON DRAWING
-          ctx.fillStyle = item.color;
-          ctx.strokeStyle = '#ffffff';
+          // ─── TOOL: Vibrant Emerald Green & Neon Cyan background disc ───
+          const isGold = item.type === 'gold-wrench';
+          const auraRadius = isGold ? 26 : 22;
+
+          // Outer green glowing drop-shadow aura disc
+          ctx.shadowColor = isGold ? 'rgba(250, 204, 21, 0.9)' : 'rgba(52, 211, 153, 0.75)';
+          ctx.shadowBlur = isGold ? 28 : 18;
+          ctx.fillStyle = isGold ? 'rgba(250, 204, 21, 0.18)' : 'rgba(16, 185, 129, 0.18)';
+          ctx.beginPath();
+          ctx.arc(0, 0, auraRadius, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Inner filled circular badge with emerald border
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = isGold ? 'rgba(250, 204, 21, 0.30)' : 'rgba(16, 185, 129, 0.28)';
+          ctx.strokeStyle = isGold ? '#facc15' : '#34d399';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(0, 0, 17, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // Clean, recognizable icons
+          ctx.rotate(item.rotation * 0.3);
+          ctx.fillStyle = isGold ? '#fef08a' : '#ffffff';
+          ctx.strokeStyle = isGold ? '#eab308' : '#d1fae5';
           ctx.lineWidth = 1.5;
 
           if (item.type === 'wrench' || item.type === 'gold-wrench') {
-            // Wrench vector shape
+            // Wrench icon
             ctx.beginPath();
-            ctx.arc(0, -10, 8, 0.8, Math.PI - 0.8, false);
-            ctx.lineTo(-4, 12);
-            ctx.arc(0, 12, 5, Math.PI, 0, false);
-            ctx.lineTo(4, -10);
+            ctx.moveTo(-3, -12);
+            ctx.lineTo(-7, -8);
+            ctx.arc(0, -6, 7, Math.PI + 0.3, Math.PI * 2 - 0.3, false);
+            ctx.lineTo(3, -12);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
-          } else if (item.type === 'duct-tape') {
-            // Circular roll of tape
+            ctx.fillRect(-2.5, -7, 5, 16);
+            ctx.strokeRect(-2.5, -7, 5, 16);
             ctx.beginPath();
-            ctx.arc(0, 0, 13, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillStyle = '#0f172a';
-            ctx.beginPath();
-            ctx.arc(0, 0, 6, 0, Math.PI * 2);
+            ctx.arc(0, 10, 4, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
-          } else if (item.type === 'screwdriver') {
-            // Precision screwdriver
-            ctx.fillStyle = item.color;
-            ctx.fillRect(-4, -14, 8, 12); // handle
-            ctx.fillStyle = '#cbd5e1';
-            ctx.fillRect(-2, -2, 4, 16); // shaft
-            ctx.strokeRect(-2, -2, 4, 16);
-          } else if (item.type === 'hydraulic-jack') {
-            // Jack pyramid shape
+          } else if (item.type === 'duct-tape') {
+            // Tape roll icon
             ctx.beginPath();
-            ctx.moveTo(0, -14);
-            ctx.lineTo(-12, 12);
-            ctx.lineTo(12, 12);
+            ctx.arc(0, 0, 11, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = isGold ? 'rgba(250, 204, 21, 0.30)' : 'rgba(16, 185, 129, 0.28)';
+            ctx.beginPath();
+            ctx.arc(0, 0, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#d1fae5';
+            ctx.stroke();
+          } else if (item.type === 'screwdriver') {
+            // Precision screwdriver icon
+            ctx.fillStyle = '#a7f3d0';
+            ctx.beginPath();
+            ctx.roundRect(-5, -12, 10, 10, 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = '#e2e8f0';
+            ctx.fillRect(-2, -2, 4, 14);
+            ctx.strokeRect(-2, -2, 4, 14);
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.moveTo(-2, 12);
+            ctx.lineTo(0, 16);
+            ctx.lineTo(2, 12);
+            ctx.fill();
+          } else if (item.type === 'hydraulic-jack') {
+            // Hydraulic Jack / lifter icon
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(-10, 7, 20, 4);
+            ctx.strokeRect(-10, 7, 20, 4);
+            ctx.fillRect(-3, -2, 6, 10);
+            ctx.strokeRect(-3, -2, 6, 10);
+            ctx.beginPath();
+            ctx.moveTo(0, -12);
+            ctx.lineTo(-7, -2);
+            ctx.lineTo(7, -2);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
           } else {
-            // Multimeter box with screen
-            ctx.fillRect(-11, -13, 22, 26);
-            ctx.fillStyle = '#0f172a';
-            ctx.fillRect(-8, -10, 16, 9);
-            ctx.strokeRect(-11, -13, 22, 26);
+            // Multimeter box with display
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.roundRect(-9, -12, 18, 24, 3);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = '#065f46';
+            ctx.fillRect(-6, -9, 12, 8);
+            ctx.fillStyle = '#6ee7b7';
+            ctx.font = 'bold 6px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('V~', 0, -3);
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.arc(-3, 8, 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#111827';
+            ctx.beginPath();
+            ctx.arc(3, 8, 2, 0, Math.PI * 2);
+            ctx.fill();
           }
+
+          // Points tag below tool
+          ctx.rotate(-item.rotation * 0.3);
+          ctx.font = 'bold 9px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillStyle = isGold ? '#fde047' : '#6ee7b7';
+          ctx.shadowColor = isGold ? '#facc15' : '#10b981';
+          ctx.shadowBlur = 6;
+          ctx.fillText('+' + item.points, 0, 30);
         } else {
-          // HAZARD DRAWING
+          // ─── HAZARD: Aggressive bright red & amber styling with pulsing aura ───
+          const pulseRadius = 24 + pulsePhase * 6;
+          const pulseAlpha = 0.12 + pulsePhase * 0.16;
+
+          // Pulsing glowing red danger aura
+          ctx.shadowColor = item.glowColor;
+          ctx.shadowBlur = 20 + pulsePhase * 12;
+          ctx.fillStyle = `rgba(239, 68, 68, ${pulseAlpha})`;
+          ctx.beginPath();
+          ctx.arc(0, 0, pulseRadius, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Inner danger ring with 2px red/amber border
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = 'rgba(127, 29, 29, 0.55)';
+          ctx.strokeStyle = item.color;
+          ctx.lineWidth = 2.5;
+          ctx.setLineDash([4, 3]);
+          ctx.beginPath();
+          ctx.arc(0, 0, 17, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          // Distinct danger icons
+          ctx.rotate(item.rotation * 0.4);
           ctx.fillStyle = item.color;
-          ctx.strokeStyle = '#fca5a5';
+          ctx.strokeStyle = '#fecaca';
           ctx.lineWidth = 1.5;
 
           if (item.type === 'spark') {
-            // Lightning Bolt
+            // Zap / Lightning Bolt icon
             ctx.beginPath();
-            ctx.moveTo(2, -14);
-            ctx.lineTo(-8, 0);
-            ctx.lineTo(-1, 0);
-            ctx.lineTo(-5, 14);
-            ctx.lineTo(9, -2);
-            ctx.lineTo(2, -2);
+            ctx.moveTo(2, -13);
+            ctx.lineTo(-6, -1);
+            ctx.lineTo(-1, -1);
+            ctx.lineTo(-4, 13);
+            ctx.lineTo(7, 0);
+            ctx.lineTo(2, 0);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
           } else if (item.type === 'fire') {
-            // Flame tongue
+            // Flame danger icon
             ctx.beginPath();
-            ctx.moveTo(0, -14);
-            ctx.quadraticCurveTo(12, 0, 8, 12);
-            ctx.quadraticCurveTo(0, 14, -8, 12);
-            ctx.quadraticCurveTo(-12, 0, 0, -14);
+            ctx.moveTo(0, -13);
+            ctx.quadraticCurveTo(10, -5, 9, 4);
+            ctx.quadraticCurveTo(8, 12, 0, 13);
+            ctx.quadraticCurveTo(-8, 12, -9, 4);
+            ctx.quadraticCurveTo(-10, -5, 0, -13);
             ctx.fill();
             ctx.stroke();
-          } else if (item.type === 'smoke') {
-            // Swirling smoke puff
+            ctx.fillStyle = '#fbbf24';
             ctx.beginPath();
-            ctx.arc(-4, 0, 9, 0, Math.PI * 2);
-            ctx.arc(4, -3, 8, 0, Math.PI * 2);
-            ctx.arc(2, 6, 7, 0, Math.PI * 2);
+            ctx.moveTo(0, -3);
+            ctx.quadraticCurveTo(5, 2, 4, 7);
+            ctx.quadraticCurveTo(0, 11, -4, 7);
+            ctx.quadraticCurveTo(-5, 2, 0, -3);
             ctx.fill();
+          } else if (item.type === 'smoke') {
+            // Toxic Smoke / Warning cloud
+            ctx.fillStyle = '#fb923c';
+            ctx.beginPath();
+            ctx.arc(-5, -2, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(5, -2, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(0, 5, 7, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.strokeStyle = '#7f1d1d';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(-7, -4);
+            ctx.lineTo(-3, 0);
+            ctx.moveTo(-3, -4);
+            ctx.lineTo(-7, 0);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(3, -4);
+            ctx.lineTo(7, 0);
+            ctx.moveTo(7, -4);
+            ctx.lineTo(3, 0);
             ctx.stroke();
           } else {
-            // Oil slick drop
+            // Alert triangle danger icon
             ctx.beginPath();
-            ctx.arc(0, 4, 10, 0, Math.PI);
-            ctx.lineTo(0, -12);
+            ctx.moveTo(0, -14);
+            ctx.lineTo(-13, 11);
+            ctx.lineTo(13, 11);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 14px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('!', 0, 8);
           }
+
+          // DANGER badge text below hazard
+          ctx.rotate(-item.rotation * 0.4);
+          ctx.font = 'bold 8px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillStyle = '#fca5a5';
+          ctx.shadowColor = '#ef4444';
+          ctx.shadowBlur = 8;
+          ctx.fillText('DANGER', 0, 30);
         }
 
         ctx.restore();
+      }
       }
 
       // Draw Player Repair Basket / Mechanic Magnet Tray
